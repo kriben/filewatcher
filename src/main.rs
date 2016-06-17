@@ -22,8 +22,8 @@ fn main() {
                 watcher.watch(p).unwrap()
             }
             watch_files(&rx, pattern, command);
-        },
-        Err(_) => println!("Error: watch setup failed.")
+        }
+        Err(_) => println!("Error: watch setup failed."),
     }
 }
 
@@ -35,7 +35,7 @@ fn run_command(path: std::path::PathBuf, command: &str) -> String {
         .arg(command)
         .arg(path.to_str().unwrap())
         .output()
-        .unwrap_or_else(|e| { panic!("failed to execute process: {}", e) });
+        .unwrap_or_else(|e| panic!("failed to execute process: {}", e));
 
     String::from_utf8(output.stdout).unwrap()
 }
@@ -44,17 +44,20 @@ fn run_command(path: std::path::PathBuf, command: &str) -> String {
 fn watch_files(rx: &Receiver<Event>, pattern: Pattern, command: &str) {
     loop {
         match rx.recv() {
-            Ok(notify::Event{ path: Some(path), op: Ok(_) }) => {
+            Ok(notify::Event { path: Some(path), op: Ok(_) }) => {
                 if pattern.matches(path.to_str().unwrap()) {
                     let t = time::now();
                     println!("===========================================");
-                    println!("{0}: {1} matched {2}:", t.asctime(), path.to_str().unwrap(), pattern.as_str());
+                    println!("{0}: {1} matched {2}:",
+                             t.asctime(),
+                             path.to_str().unwrap(),
+                             pattern.as_str());
                     let res = run_command(path, command);
                     println!("{0}", res)
                 }
-            },
+            }
             Err(e) => println!("{:?}", e),
-            _ => ()
+            _ => (),
         }
     }
 }
