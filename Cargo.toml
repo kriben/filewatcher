@@ -1,0 +1,8 @@
+[package]
+name = "filewatcher"
+version = "0.1.0"
+authors = ["Kristian Bendiksen <kristian.bendiksen@gmail.com>"]
+
+[dependencies]
+notify = "^2.6.1"
+glob = "*"
