@@ -1,5 +1,6 @@
 extern crate notify;
 extern crate glob;
+extern crate time;
 
 use notify::{RecommendedWatcher, Error, Watcher, Event};
 use std::process::Command;
@@ -9,7 +10,7 @@ use std::sync::mpsc::{channel, Receiver};
 
 fn main() {
     let paths = vec![".", "/tmp/"];
-    let command = "echo hello";
+    let command = "wc -l";
     let pattern = Pattern::new("*.txt").unwrap();
 
     let (tx, rx) = channel();
@@ -27,21 +28,29 @@ fn main() {
 }
 
 
+fn run_command(path: std::path::PathBuf, command: &str) -> String {
+
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(command)
+        .arg(path.to_str().unwrap())
+        .output()
+        .unwrap_or_else(|e| { panic!("failed to execute process: {}", e) });
+
+    String::from_utf8(output.stdout).unwrap()
+}
+
+
 fn watch_files(rx: &Receiver<Event>, pattern: Pattern, command: &str) {
     loop {
         match rx.recv() {
-            Ok(notify::Event{ path: Some(path), op: Ok(op) }) => {
+            Ok(notify::Event{ path: Some(path), op: Ok(_) }) => {
                 if pattern.matches(path.to_str().unwrap()) {
-                    println!("{:?} {:?}", path, op);
-                    let output = Command::new("sh")
-                        .arg("-c")
-                        .arg(command)
-                        .output()
-                        .unwrap_or_else(|e| { panic!("failed to execute process: {}", e) });
-                    println!("{:?}", String::from_utf8(output.stdout))
-                }
-                else {
-                    println!("No match");
+                    let t = time::now();
+                    println!("===========================================");
+                    println!("{0}: {1} matched {2}:", t.asctime(), path.to_str().unwrap(), pattern.as_str());
+                    let res = run_command(path, command);
+                    println!("{0}", res)
                 }
             },
             Err(e) => println!("{:?}", e),

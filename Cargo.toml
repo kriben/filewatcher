@@ -6,3 +6,4 @@ authors = ["Kristian Bendiksen <kristian.bendiksen@gmail.com>"]
 [dependencies]
 notify = "^2.6.1"
 glob = "*"
+time = "0.1"
