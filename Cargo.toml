@@ -7,3 +7,4 @@ authors = ["Kristian Bendiksen <kristian.bendiksen@gmail.com>"]
 notify = "^2.6.1"
 glob = "*"
 time = "0.1"
+getopts = "0.2"

@@ -1,27 +1,56 @@
-extern crate notify;
+extern crate getopts;
 extern crate glob;
+extern crate notify;
 extern crate time;
 
-use notify::{RecommendedWatcher, Error, Watcher, Event};
-use std::process::Command;
+use getopts::Options;
 use glob::Pattern;
+use notify::{RecommendedWatcher, Error, Watcher, Event};
+use std::env;
+use std::process::Command;
 use std::sync::mpsc::{channel, Receiver};
 
 
+
+fn print_usage(program: &str, opts: Options) {
+    let brief = format!("Usage: {} FILE [options]", program);
+    print!("{}", opts.usage(&brief));
+}
+
+
 fn main() {
-    let paths = vec![".", "/tmp/"];
-    let command = "wc -l";
-    let pattern = Pattern::new("*.txt").unwrap();
+    let args: Vec<String> = env::args().collect();
+    let program = args[0].clone();
+
+    let mut opts = Options::new();
+    opts.optopt("p", "pattern", "set pattern", "PATTERN");
+    opts.optopt("c", "command", "set command", "COMMAND");
+
+    opts.optflag("h", "help", "print this help menu");
+    let matches = match opts.parse(&args[1..]) {
+        Ok(m) => m,
+        Err(f) => panic!(f.to_string()),
+    };
+    if matches.opt_present("h") {
+        print_usage(&program, opts);
+        return;
+    }
+
+    let path = "/tmp/";
+    let command = matches.opt_str("c").unwrap();
+    let pattern = Pattern::new(&matches.opt_str("p").unwrap()).unwrap();
+
+    println!("Watching directory: {0}", path);
+    println!("Pattern: {0}", pattern.as_str());
+    println!("Command: {0}", command);
 
     let (tx, rx) = channel();
     let w: Result<RecommendedWatcher, Error> = Watcher::new(tx);
 
     match w {
         Ok(mut watcher) => {
-            for p in paths {
-                watcher.watch(p).unwrap()
-            }
-            watch_files(&rx, pattern, command);
+            watcher.watch(path).unwrap();
+            watch_files(&rx, pattern, &command);
         }
         Err(_) => println!("Error: watch setup failed."),
     }
@@ -30,9 +59,7 @@ fn main() {
 
 fn run_command(path: std::path::PathBuf, command: &str) -> String {
 
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg(command)
+    let output = Command::new(command)
         .arg(path.to_str().unwrap())
         .output()
         .unwrap_or_else(|e| panic!("failed to execute process: {}", e));
