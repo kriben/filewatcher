@@ -23,6 +23,7 @@ fn main() {
     let program = args[0].clone();
 
     let mut opts = Options::new();
+    opts.optopt("d", "directory", "set directory", "DIRECTORY");
     opts.optopt("p", "pattern", "set pattern", "PATTERN");
     opts.optopt("c", "command", "set command", "COMMAND");
 
@@ -36,7 +37,7 @@ fn main() {
         return;
     }
 
-    let path = "/tmp/";
+    let path = matches.opt_str("d").unwrap();
     let command = matches.opt_str("c").unwrap();
     let pattern = Pattern::new(&matches.opt_str("p").unwrap()).unwrap();
 
