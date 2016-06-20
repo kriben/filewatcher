@@ -69,8 +69,19 @@ fn main() {
 
 
 fn run_command(path: std::path::PathBuf, command: &str) -> String {
-    let output = Command::new(command)
-        .arg(path.to_str().unwrap())
+    // Split the program and possible arguments into parts
+    let mut args = command.split_whitespace();
+
+    // Create command with first argument as the program to run
+    let program = args.nth(0).unwrap();
+    let mut cmd = Command::new(program);
+
+    // Rest of items should be arguments
+    for arg in args {
+        cmd.arg(arg);
+    }
+
+    let output = cmd.arg(path.to_str().unwrap())
         .output()
         .unwrap_or_else(|e| panic!("failed to execute process: {}", e));
 
