@@ -11,7 +11,6 @@ use std::process::Command;
 use std::sync::mpsc::{channel, Receiver};
 
 
-
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} FILE [options]", program);
     print!("{}", opts.usage(&brief));
@@ -24,22 +23,34 @@ fn main() {
 
     let mut opts = Options::new();
     opts.optopt("d", "directory", "set directory", "DIRECTORY");
-    opts.optopt("p", "pattern", "set pattern", "PATTERN");
-    opts.optopt("c", "command", "set command", "COMMAND");
-
+    opts.reqopt("p", "pattern", "set pattern", "PATTERN");
+    opts.reqopt("c", "command", "set command", "COMMAND");
     opts.optflag("h", "help", "print this help menu");
+
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
-        Err(f) => panic!(f.to_string()),
+        Err(f) => {
+            println!("{0}\n", f.to_string());
+            print_usage(&program, opts);
+            return;
+        }
     };
+
     if matches.opt_present("h") {
         print_usage(&program, opts);
         return;
     }
 
-    let path = matches.opt_str("d").unwrap();
+    let path = matches.opt_str("d").unwrap_or(String::from("."));
     let command = matches.opt_str("c").unwrap();
-    let pattern = Pattern::new(&matches.opt_str("p").unwrap()).unwrap();
+    let pattern = match Pattern::new(&matches.opt_str("p").unwrap()) {
+        Ok(res) => res,
+        Err(msg) => {
+            println!("{}\n", msg);
+            print_usage(&program, opts);
+            return;
+        }
+    };
 
     println!("Watching directory: {0}", path);
     println!("Pattern: {0}", pattern.as_str());
@@ -47,7 +58,6 @@ fn main() {
 
     let (tx, rx) = channel();
     let w: Result<RecommendedWatcher, Error> = Watcher::new(tx);
-
     match w {
         Ok(mut watcher) => {
             watcher.watch(path).unwrap();
@@ -59,7 +69,6 @@ fn main() {
 
 
 fn run_command(path: std::path::PathBuf, command: &str) -> String {
-
     let output = Command::new(command)
         .arg(path.to_str().unwrap())
         .output()
@@ -75,8 +84,7 @@ fn watch_files(rx: &Receiver<Event>, pattern: Pattern, command: &str) {
             Ok(notify::Event { path: Some(path), op: Ok(_) }) => {
                 if pattern.matches(path.to_str().unwrap()) {
                     let t = time::now();
-                    println!("===========================================");
-                    println!("{0}: {1} matched {2}:",
+                    println!("\n{0}: {1} matched {2}:",
                              t.asctime(),
                              path.to_str().unwrap(),
                              pattern.as_str());
