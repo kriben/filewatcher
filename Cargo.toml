@@ -1,10 +1,10 @@
 [package]
 name = "filewatcher"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Kristian Bendiksen <kristian.bendiksen@gmail.com>"]
 
 [dependencies]
-notify = "^2.6.1"
+notify = "^6.1.1"
 glob = "*"
 time = "0.1"
-getopts = "0.2"
+getopts = "0.2.21"
